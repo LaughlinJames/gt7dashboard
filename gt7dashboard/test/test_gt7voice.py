@@ -118,11 +118,39 @@ class TestSpeak(unittest.TestCase):
     def test_speak_starts_say_without_waiting(self):
         with mock.patch("gt7dashboard.gt7voice.shutil.which", return_value="/usr/bin/say"), \
                 mock.patch("gt7dashboard.gt7voice.subprocess.Popen") as popen, \
-                mock.patch.dict("os.environ", {"GT7_LAP_ANNOUNCE": "true"}):
+                mock.patch.dict("os.environ", {"GT7_LAP_ANNOUNCE": "true"}, clear=True):
             speak(sample_announcement())
 
         popen.assert_called_once_with(
-            ["/usr/bin/say", sample_announcement()],
+            ["/usr/bin/say", "-v", "Daniel", sample_announcement()],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+
+    def test_speak_uses_daniel_when_voice_is_unset(self):
+        with mock.patch("gt7dashboard.gt7voice.shutil.which", return_value="/usr/bin/say"), \
+                mock.patch("gt7dashboard.gt7voice.subprocess.Popen") as popen, \
+                mock.patch.dict("os.environ", {"GT7_LAP_ANNOUNCE": "true"}, clear=True):
+            speak("Lap ready.")
+
+        popen.assert_called_once_with(
+            ["/usr/bin/say", "-v", "Daniel", "Lap ready."],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+
+    def test_speak_uses_voice_from_environment(self):
+        with mock.patch("gt7dashboard.gt7voice.shutil.which", return_value="/usr/bin/say"), \
+                mock.patch("gt7dashboard.gt7voice.subprocess.Popen") as popen, \
+                mock.patch.dict(
+                    "os.environ",
+                    {"GT7_LAP_ANNOUNCE": "true", "GT7_LAP_VOICE": "Samantha"},
+                    clear=True,
+                ):
+            speak("Lap ready.")
+
+        popen.assert_called_once_with(
+            ["/usr/bin/say", "-v", "Samantha", "Lap ready."],
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
         )

@@ -3,7 +3,8 @@
 The telemetry thread calls LapAnnouncer once for each stored lap.
 Speech is the macOS `say` command, launched and not waited on, so packet
 collection keeps running. `GT7_LAP_ANNOUNCE=false` silences every announcement,
-including the Test Voice button.
+including the Test Voice button. `GT7_LAP_VOICE` selects the macOS voice and
+defaults to Daniel.
 """
 
 import logging
@@ -15,6 +16,8 @@ from typing import List, Optional, Sequence
 from gt7dashboard.gt7lap import Lap
 
 logger = logging.getLogger(__name__)
+
+DEFAULT_LAP_VOICE = "Daniel"
 
 SAMPLE_LAP_NUMBER = 4
 SAMPLE_LAP_TIME_MS = 93653
@@ -67,6 +70,11 @@ def _announcements_enabled() -> bool:
     return os.environ.get("GT7_LAP_ANNOUNCE", "true").lower() != "false"
 
 
+def _lap_voice() -> str:
+    voice = os.environ.get("GT7_LAP_VOICE", DEFAULT_LAP_VOICE).strip()
+    return voice or DEFAULT_LAP_VOICE
+
+
 def speak(text: str) -> None:
     """Speak text without blocking the caller. No-op when speech is unavailable."""
     if not text or not _announcements_enabled():
@@ -80,7 +88,7 @@ def speak(text: str) -> None:
     logger.info("Lap announcement: %s", text)
     try:
         subprocess.Popen(
-            [say, text],
+            [say, "-v", _lap_voice(), text],
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
         )
